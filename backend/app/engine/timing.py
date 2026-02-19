@@ -15,12 +15,14 @@ from enum import Enum
 
 from app.engine.calendar import (
     is_trading_day,
+    next_trading_day,
     futures_settlement_day,
     options_settlement_day,
     settlement_week_info,
     trading_day_or_prev,
     _week_range,
 )
+from chinese_calendar import is_holiday as _is_cn_holiday
 
 
 # ==================== 信号定义 ====================
@@ -30,6 +32,7 @@ class Light(Enum):
     RED = "红灯"
     YELLOW = "黄灯"
     GREEN = "绿灯"
+    GREY = "休市"
 
 
 class Action(Enum):
@@ -41,6 +44,7 @@ class Action(Enum):
     PROBE_ENTRY = "试探建仓"
     OBSERVE = "结算观察"
     NORMAL = "正常交易"
+    INACTIVE = "休市"
 
 
 @dataclass
@@ -52,6 +56,10 @@ class TimingSignal:
     action: Action
     reason: str
     details: list[str] = field(default_factory=list)
+    is_trading_day: bool = True
+    is_holiday: bool = False
+    holiday_name: str = ""
+    next_open_date: str = ""
 
     def __str__(self) -> str:
         level_tag = f"L{self.level}" if self.level > 0 else "L0"
@@ -257,13 +265,69 @@ def evaluate(d: datetime.date) -> TimingSignal:
         if sig:
             return sig
 
+    # 非交易日 → 灰色休市态
+    if not is_trading_day(d):
+        return _build_inactive_signal(d)
+
     # 无特殊信号
     return TimingSignal(
         date=d,
         level=0,
         light=Light.GREEN,
         action=Action.NORMAL,
-        reason="正常交易时段" if is_trading_day(d) else "非交易日",
+        reason="正常交易时段",
+    )
+
+
+# ==================== 休市信号构建 ====================
+
+_HOLIDAY_NAMES: dict[tuple[int, int], str] = {
+    (1, 1): "元旦", (1, 2): "元旦",
+    (2, 14): "春节", (2, 15): "春节", (2, 16): "春节", (2, 17): "春节",
+    (2, 18): "春节", (2, 19): "春节", (2, 20): "春节", (2, 21): "春节", (2, 22): "春节",
+    (5, 1): "劳动节", (5, 2): "劳动节", (5, 3): "劳动节",
+    (10, 1): "国庆节", (10, 2): "国庆节", (10, 3): "国庆节", (10, 4): "国庆节",
+    (10, 5): "国庆节", (10, 6): "国庆节", (10, 7): "国庆节",
+}
+
+
+def _get_holiday_name(d: datetime.date) -> str:
+    """获取节假日名称。优先走静态表，兜底检测 chinese_calendar。"""
+    name = _HOLIDAY_NAMES.get((d.month, d.day), "")
+    if name:
+        return name
+    if d.weekday() >= 5:
+        return "周末"
+    try:
+        if _is_cn_holiday(d):
+            return "法定假日"
+    except Exception:
+        pass
+    return "非交易日"
+
+
+def _build_inactive_signal(d: datetime.date) -> TimingSignal:
+    """构建休市信号，包含假日信息和下一开盘日。"""
+    holiday_name = _get_holiday_name(d)
+    next_open = next_trading_day(d)
+    next_open_str = next_open.strftime("%Y-%m-%d")
+
+    if holiday_name == "周末":
+        reason = f"周末休市 | {next_open.month}月{next_open.day}日开盘"
+    else:
+        reason = f"{holiday_name}休市 | {next_open.month}月{next_open.day}日开盘"
+
+    return TimingSignal(
+        date=d,
+        level=0,
+        light=Light.GREY,
+        action=Action.INACTIVE,
+        reason=reason,
+        details=[f"下一交易日: {next_open_str}"],
+        is_trading_day=False,
+        is_holiday=holiday_name not in ("周末", "非交易日"),
+        holiday_name=holiday_name,
+        next_open_date=next_open_str,
     )
 
 

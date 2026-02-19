@@ -55,10 +55,12 @@ export default function StocksPage() {
       if (riskRes && riskRes.has_risk) {
         setRiskInfo(riskRes);
         toast.error(
-          riskRes.risk_level === "extreme" ? "极端风险股票" : "财务风险警告",
+          riskRes.risk_level === "extreme" ? "⚠️ 命中财务红线名单 — 严禁买入" : "财务风险警告",
           {
-            description: riskRes.reason || "该股票存在财务异常，请谨慎操作",
-            duration: 8000,
+            description: riskRes.risk_level === "extreme"
+              ? `该股连亏${riskRes.loss_years || "? "}年/营收不达标，属于极端风险股，严禁任何买入操作`
+              : riskRes.reason || "该股票存在财务异常，请谨慎操作",
+            duration: 10000,
           }
         );
       }
@@ -96,14 +98,14 @@ export default function StocksPage() {
 
       {/* 财务风险警告 — 深度排雷面板 */}
       {riskInfo && riskInfo.has_risk && (
-        <div className={`rounded-xl border-2 p-5 ${
+        <div className={`rounded-xl p-5 ${
           riskInfo.risk_level === "extreme"
-            ? "border-red-500 bg-red-500/10"
-            : "border-amber-500/60 bg-amber-500/10"
+            ? "border-l-4 border-red-500 bg-gradient-to-r from-red-600/20 via-red-950/30 to-transparent"
+            : "border-2 border-amber-500/60 bg-amber-500/10"
         }`}>
           <div className="flex items-start gap-3">
             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-              riskInfo.risk_level === "extreme" ? "bg-red-500/20" : "bg-amber-500/20"
+              riskInfo.risk_level === "extreme" ? "bg-red-500/20 animate-pulse" : "bg-amber-500/20"
             }`}>
               <ShieldBan className={`h-5 w-5 ${
                 riskInfo.risk_level === "extreme" ? "text-red-400" : "text-amber-400"
@@ -114,7 +116,7 @@ export default function StocksPage() {
                 <span className={`text-lg font-bold ${
                   riskInfo.risk_level === "extreme" ? "text-red-400" : "text-amber-400"
                 }`}>
-                  {riskInfo.risk_level === "extreme" ? "极端风险 — 强烈建议回避" : "ST / 退市风险警告"}
+                  {riskInfo.risk_level === "extreme" ? "极端风险 — 严禁买入" : "ST / 退市风险警告"}
                 </span>
                 <Badge variant="destructive" className="text-xs">
                   {riskInfo.risk_type || "财务异常"}

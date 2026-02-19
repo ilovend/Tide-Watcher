@@ -296,6 +296,10 @@ async def get_timing_today(source: ZhituSource = Depends(get_source)):
         "action": signal.action.value,
         "reason": signal.reason,
         "details": signal.details,
+        "is_trading_day": signal.is_trading_day,
+        "is_holiday": signal.is_holiday,
+        "holiday_name": signal.holiday_name,
+        "next_open_date": signal.next_open_date,
     }
 
 
@@ -354,6 +358,10 @@ async def get_timing_by_date(date: str):
         "action": signal.action.value,
         "reason": signal.reason,
         "details": signal.details,
+        "is_trading_day": signal.is_trading_day,
+        "is_holiday": signal.is_holiday,
+        "holiday_name": signal.holiday_name,
+        "next_open_date": signal.next_open_date,
     }
 
 

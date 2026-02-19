@@ -291,6 +291,10 @@ export interface TimingSignal {
   action: string;
   reason: string;
   details: string[];
+  is_trading_day: boolean;
+  is_holiday: boolean;
+  holiday_name: string;
+  next_open_date: string;
 }
 
 export interface SettlementCalendar {

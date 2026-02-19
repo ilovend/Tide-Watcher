@@ -24,6 +24,7 @@ import {
   Calendar,
   Clock,
   AlertTriangle,
+  Moon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -69,6 +70,14 @@ const LIGHT_CONFIG: Record<string, {
     glow: "shadow-emerald-500/10 shadow-lg",
     icon: Shield,
     label: "安全",
+  },
+  "休市": {
+    bg: "bg-slate-900/50",
+    border: "border-slate-500/30",
+    text: "text-slate-400",
+    glow: "",
+    icon: Moon,
+    label: "休市",
   },
 };
 
@@ -147,6 +156,7 @@ export default function Dashboard() {
   }
 
   const totalSignals = Object.values(signals).flat().length;
+  const isInactive = timing?.light === "休市" || timing?.is_trading_day === false;
   const lc = timing ? getLightConfig(timing.light) : getLightConfig("绿灯");
   const LightIcon = lc.icon;
 
@@ -163,7 +173,7 @@ export default function Dashboard() {
         <div className="flex items-start justify-between gap-4">
           {/* 左侧：信号灯 + 状态 */}
           <div className="flex items-center gap-4">
-            <div className={`flex h-14 w-14 items-center justify-center rounded-full ${lc.bg} border ${lc.border}`}>
+            <div className={`flex h-14 w-14 items-center justify-center rounded-full ${lc.bg} border ${lc.border} ${isInactive ? "animate-pulse" : ""}`}>
               <LightIcon className={`h-7 w-7 ${lc.text}`} />
             </div>
             <div>
@@ -257,7 +267,12 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">观潮看板</h1>
-          <p className="text-muted-foreground">{today()} 市场概览</p>
+          <p className="text-muted-foreground">
+            {timing?.date || today()} 市场概览
+            {isInactive && timing?.holiday_name && (
+              <span className="ml-2 text-slate-500">({timing.holiday_name})</span>
+            )}
+          </p>
         </div>
         <Button onClick={handleRunAll} disabled={running}>
           <Play className="mr-2 h-4 w-4" />
