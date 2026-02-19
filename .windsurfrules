@@ -1,0 +1,47 @@
+# Tide-Watcher 项目规则
+
+## 项目概述
+Tide-Watcher 是一个 A 股个人选股系统，核心数据源为 ZhituAPI（包年版，3000次/分钟）。
+用户是编程零基础的 A 股投资者，所有代码必须清晰易懂。
+
+## 技术栈
+- **后端**: Python 3.11+ / FastAPI / SQLAlchemy / APScheduler / httpx / tenacity
+- **前端**: Next.js 14 / React / TailwindCSS / shadcn/ui / Lightweight Charts
+- **数据库**: SQLite（开发期）→ PostgreSQL（生产期可选）
+- **包管理**: pip + requirements.txt（后端）、pnpm（前端）
+
+## 架构分层
+```
+backend/app/
+├── api/          → REST 接口层（路由定义）
+├── data/         → 数据采集层（数据源适配器、频率控制、缓存）
+├── store/        → 数据存储层（ORM 模型、数据库操作）
+├── engine/       → 策略引擎层（执行器、注册表、调度器）
+└── strategies/   → 策略定义层（用户主要编辑区，一文件一策略）
+```
+
+## 编码规范
+- 文件命名：全小写 + 下划线（如 `limit_up_board.py`）
+- 策略文件：一个文件只定义一个策略
+- 股票代码：内部统一使用 `000001.SZ` 标准格式（通过 `normalize_code()` 转换）
+- 配置管理：敏感信息只在 `.env` 中，通过 `config.py` 的 `settings` 单例访问
+- 异步优先：数据获取层全部使用 async/await
+- 中文注释：关键业务逻辑必须有中文注释说明
+
+## 关键约定
+- 新增数据源：在 `data/` 目录创建 `source_xxx.py`，实现 `DataSource` 基类
+- 新增策略：在 `strategies/` 目录创建 `.py` 文件，使用 `@strategy` 装饰器注册
+- 新增 API：在 `api/` 目录的对应路由文件中添加端点
+- 数据库变更：通过 `store/models.py` 修改 ORM 模型
+
+## ZhituAPI 注意事项
+- Base URL: https://api.zhituapi.com
+- 认证方式: 查询参数 `token={ZHITU_TOKEN}`（非请求头）
+- 通用频率: 3000次/分钟
+- realall 接口: 额外限制每分钟最多 1 次
+- 公司信息接口使用纯代码（如 `000001`），历史数据接口使用带后缀代码（如 `000001.SZ`）
+
+## 禁止事项
+- 禁止硬编码 API Key
+- 禁止在策略文件中直接调用 HTTP 请求（必须通过数据源适配器）
+- 禁止跳过频率控制器直接请求 API

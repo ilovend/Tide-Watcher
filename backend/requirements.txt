@@ -1,0 +1,26 @@
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# HTTP Client
+httpx==0.28.1
+
+# Configuration
+pydantic-settings==2.7.1
+python-dotenv==1.0.1
+
+# Database
+sqlalchemy==2.0.36
+aiosqlite==0.20.0
+
+# Scheduler
+apscheduler==3.10.4
+
+# Retry
+tenacity==9.0.0
+
+# Trading Calendar
+chinesecalendar==1.11.0
+
+# Utilities
+pandas==2.2.3
