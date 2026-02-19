@@ -58,7 +58,7 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="border-t px-4 py-3">
-        <p className="text-xs text-muted-foreground">Tide-Watcher v0.1</p>
+        <p className="text-xs text-muted-foreground">Tide-Watcher v0.3</p>
       </div>
     </aside>
   );

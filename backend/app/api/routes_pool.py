@@ -299,6 +299,42 @@ async def get_timing_today(source: ZhituSource = Depends(get_source)):
     }
 
 
+@router.get("/timing/calendar")
+async def get_timing_calendar():
+    """获取结算日历信息：本月期货/期权结算日 + 倒计时。"""
+    import datetime
+    from app.engine.calendar import (
+        futures_settlement_day,
+        options_settlement_day,
+        is_futures_settlement_week,
+        is_options_settlement_week,
+    )
+
+    today = datetime.date.today()
+    y, m = today.year, today.month
+
+    fd = futures_settlement_day(y, m)
+    od = options_settlement_day(y, m)
+
+    # 如果本月结算日已过，计算下月
+    next_m = m + 1 if m < 12 else 1
+    next_y = y if m < 12 else y + 1
+    next_fd = futures_settlement_day(next_y, next_m) if fd < today else fd
+    next_od = options_settlement_day(next_y, next_m) if od < today else od
+
+    return {
+        "today": str(today),
+        "futures_day": str(fd),
+        "options_day": str(od),
+        "next_futures_day": str(next_fd),
+        "next_options_day": str(next_od),
+        "days_to_futures": (next_fd - today).days,
+        "days_to_options": (next_od - today).days,
+        "is_futures_week": is_futures_settlement_week(today),
+        "is_options_week": is_options_settlement_week(today),
+    }
+
+
 @router.get("/timing/{date}")
 async def get_timing_by_date(date: str):
     """获取指定日期的日历择时信号（仅日历层，无盘面数据）。"""

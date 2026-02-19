@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, TrendingUp, TrendingDown, Building2, BarChart3 } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Building2, BarChart3, ShieldBan } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorMessage } from "@/components/error-message";
 import { KlineChart } from "@/components/kline-chart";
@@ -52,7 +52,16 @@ export default function StocksPage() {
       setKline(klineRes.data);
       if (companyRes.data) setCompanyInfo(companyRes.data);
       setSectors(sectorsRes.data || []);
-      if (riskRes && riskRes.has_risk) setRiskInfo(riskRes);
+      if (riskRes && riskRes.has_risk) {
+        setRiskInfo(riskRes);
+        toast.error(
+          riskRes.risk_level === "extreme" ? "极端风险股票" : "财务风险警告",
+          {
+            description: riskRes.reason || "该股票存在财务异常，请谨慎操作",
+            duration: 8000,
+          }
+        );
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "查询失败";
       setError(msg);
@@ -85,19 +94,72 @@ export default function StocksPage() {
         </Button>
       </div>
 
-      {/* 财务风险警告 */}
+      {/* 财务风险警告 — 深度排雷面板 */}
       {riskInfo && riskInfo.has_risk && (
-        <div className="rounded-lg border-2 border-red-500 bg-red-500/10 p-4">
-          <div className="flex items-center gap-2 text-red-500">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span className="text-lg font-bold">ST / 退市风险警告</span>
+        <div className={`rounded-xl border-2 p-5 ${
+          riskInfo.risk_level === "extreme"
+            ? "border-red-500 bg-red-500/10"
+            : "border-amber-500/60 bg-amber-500/10"
+        }`}>
+          <div className="flex items-start gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+              riskInfo.risk_level === "extreme" ? "bg-red-500/20" : "bg-amber-500/20"
+            }`}>
+              <ShieldBan className={`h-5 w-5 ${
+                riskInfo.risk_level === "extreme" ? "text-red-400" : "text-amber-400"
+              }`} />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className={`text-lg font-bold ${
+                  riskInfo.risk_level === "extreme" ? "text-red-400" : "text-amber-400"
+                }`}>
+                  {riskInfo.risk_level === "extreme" ? "极端风险 — 强烈建议回避" : "ST / 退市风险警告"}
+                </span>
+                <Badge variant="destructive" className="text-xs">
+                  {riskInfo.risk_type || "财务异常"}
+                </Badge>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{riskInfo.reason}</p>
+
+              {/* 风险指标明细 */}
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                {riskInfo.latest_revenue != null && (
+                  <div className="rounded-md bg-muted/30 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">最新营收</div>
+                    <div className="text-sm font-semibold">
+                      {riskInfo.latest_revenue >= 1e8
+                        ? `${(riskInfo.latest_revenue / 1e8).toFixed(2)}亿`
+                        : riskInfo.latest_revenue >= 1e4
+                          ? `${(riskInfo.latest_revenue / 1e4).toFixed(0)}万`
+                          : `${riskInfo.latest_revenue.toFixed(0)}元`
+                      }
+                    </div>
+                  </div>
+                )}
+                {riskInfo.loss_years != null && riskInfo.loss_years > 0 && (
+                  <div className="rounded-md bg-muted/30 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">连续亏损</div>
+                    <div className="text-sm font-semibold text-red-400">{riskInfo.loss_years} 年</div>
+                  </div>
+                )}
+                {riskInfo.cumulative_loss != null && riskInfo.cumulative_loss !== 0 && (
+                  <div className="rounded-md bg-muted/30 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">累计亏损</div>
+                    <div className="text-sm font-semibold text-red-400">
+                      {(riskInfo.cumulative_loss / 1e8).toFixed(2)}亿
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {riskInfo.scan_date && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  排雷扫描日期: {riskInfo.scan_date}
+                </p>
+              )}
+            </div>
           </div>
-          <p className="mt-2 text-sm text-red-400">{riskInfo.reason}</p>
-          {riskInfo.scan_date && (
-            <p className="mt-1 text-xs text-muted-foreground">扫描日期: {riskInfo.scan_date}</p>
-          )}
         </div>
       )}
 

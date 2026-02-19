@@ -1,7 +1,7 @@
 # 观潮 (Tide-Watcher) 项目状态文档
 
 > 最后更新：2026-02-20  
-> 版本：v0.2
+> 版本：v0.3
 
 ---
 
@@ -11,7 +11,7 @@ Tide-Watcher 是一个 A 股个人选股辅助决策系统，核心能力：
 - **择时引擎**：三级优先级漏斗 + 盘面守卫二次确认
 - **财务排雷**：全市场 5190 只股票自动扫描，标记 ST/退市风险
 - **数据引擎**：ZhituAPI 数据源 + SQLite 本地缓存 + 自动调度
-- **可视化**：Streamlit 暗色主题多页面看板
+- **可视化**：Next.js 16 暗色主题多页面看板（shadcn/ui + Lightweight Charts）
 
 ---
 
@@ -155,19 +155,20 @@ Step 2: 深度扫描（/hs/fin/income 利润表）
 
 ---
 
-## 五、前端架构（Streamlit 多页面）
+## 五、前端架构（Next.js 16）
 
-**启动**: `cd backend && ./venv/Scripts/streamlit run ui/app.py`
+**启动**: `cd frontend && pnpm dev`
+**技术栈**: Next.js 16 + React 19 + TailwindCSS 4 + shadcn/ui + Lightweight Charts + Sonner Toast
 
 ### 页面功能分布
 
 | 页面 | 文件 | 功能 |
 |------|------|------|
-| **观潮看板** | `ui/app.py` | 交易红绿灯 HUD + 情绪/策略/风险统计行 + 涨跌柱状图 + 涨停TOP10 + 排雷搜索 + 结算日日历 |
-| **股池监控** | `ui/pages/1_股池监控.py` | 5种股池Tab（涨停/跌停/强势/炸板/次新）+ 日期选择 |
-| **策略中心** | `ui/pages/2_策略中心.py` | 策略列表 + 一键执行 + 信号历史表 |
-| **个股查询** | `ui/pages/3_个股查询.py` | 实时行情卡片 + 财务排雷 + 综合操作建议 + K线明细 |
-| **市场情绪** | `ui/pages/4_市场情绪.py` | 5阶段指标卡 + 情绪评分走势图(Plotly) + 历史明细表 |
+| **观潮看板** | `src/app/page.tsx` | 三级择时红绿灯 HUD（红/黄/绿渐变）+ 结算日倒计时 + 盘面守卫状态 + 策略信号 + 涨停TOP10 |
+| **股池监控** | `src/app/pools/page.tsx` | 5种股池Tab（涨停/跌停/强势/炸板/次新）+ 日期选择 |
+| **策略中心** | `src/app/strategies/page.tsx` | 策略列表 + 一键执行 + 信号历史表 |
+| **个股查询** | `src/app/stocks/page.tsx` | 实时行情 + K线图(Lightweight Charts) + 财务排雷深度面板(风险指标明细) + Toast预警 |
+| **市场情绪** | `src/app/emotion/page.tsx` | 5阶段指标卡 + 情绪走势表 |
 
 ### 综合操作建议矩阵
 
@@ -212,12 +213,17 @@ backend/
 │   │   ├── runner.py           → 策略执行器
 │   │   └── scheduler.py        → APScheduler 调度
 │   └── strategies/         → 策略定义层（待编写）
-├── ui/                     → Streamlit 前端
-│   ├── app.py                  → 主看板
-│   └── pages/                  → 子页面（4个）
 ├── scripts/                → 工具脚本
 ├── tide_watcher.db         → SQLite 数据库（~2.1GB）
 └── requirements.txt        → Python 依赖
+
+frontend/
+├── src/
+│   ├── app/                → Next.js 页面（5个路由）
+│   ├── components/         → 通用组件（sidebar/kline-chart/ui/）
+│   └── lib/                → API 客户端 + 格式化工具
+├── package.json            → pnpm 依赖（670 packages）
+└── .env.local              → NEXT_PUBLIC_API_URL
 ```
 
 ---
@@ -227,12 +233,14 @@ backend/
 ### 后端（Python）
 ```
 fastapi, uvicorn, httpx, tenacity, pydantic-settings, python-dotenv,
-sqlalchemy, aiosqlite, apscheduler, pandas, chinesecalendar,
-streamlit, plotly
+sqlalchemy, aiosqlite, apscheduler, pandas, chinesecalendar
 ```
 
-### 已归档
-- `archive/frontend_nextjs/` — 旧 Next.js 前端源码
+### 前端（Node.js / pnpm）
+```
+next@16, react@19, tailwindcss@4, shadcn/ui, lightweight-charts,
+lucide-react, sonner, radix-ui, class-variance-authority
+```
 
 ---
 
@@ -242,3 +250,5 @@ streamlit, plotly
 - [ ] 连续亏损规则可进一步用 `/hs/fin/income` 深度扫描全市场（目前仅对已标记股扫描）
 - [ ] 交易日盘中实测择时+守卫完整流程
 - [ ] 清理 `scripts/` 目录中的临时调试脚本
+- [ ] 前端情绪页面增加 Plotly/Recharts 评分走势图
+- [ ] 个股查询页面增加择时+排雷综合操作建议矩阵

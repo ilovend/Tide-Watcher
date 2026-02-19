@@ -85,6 +85,8 @@ export const poolApi = {
     request<TimingSignal>("/api/pools/timing/today"),
   timingByDate: (date: string) =>
     request<TimingSignal>(`/api/pools/timing/${date}`),
+  timingCalendar: () =>
+    request<SettlementCalendar>("/api/pools/timing/calendar"),
 };
 
 // ---------- 策略 ----------
@@ -289,6 +291,18 @@ export interface TimingSignal {
   action: string;
   reason: string;
   details: string[];
+}
+
+export interface SettlementCalendar {
+  today: string;
+  futures_day: string;
+  options_day: string;
+  next_futures_day: string;
+  next_options_day: string;
+  days_to_futures: number;
+  days_to_options: number;
+  is_futures_week: boolean;
+  is_options_week: boolean;
 }
 
 export interface WatchlistItem {
