@@ -14,8 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Layers, RefreshCw } from "lucide-react";
-import { poolApi, type PoolStock } from "@/lib/api";
+import { Layers, RefreshCw, ShieldAlert } from "lucide-react";
+import { poolApi, type PoolStock, type GlobalStatus } from "@/lib/api";
 
 const POOL_TABS = [
   { code: "ztgc", name: "涨停股池", color: "text-red-500" },
@@ -40,12 +40,20 @@ export default function PoolsPage() {
   const [activeTab, setActiveTab] = useState("ztgc");
   const [data, setData] = useState<PoolStock[]>([]);
   const [loading, setLoading] = useState(false);
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState("");
+  const [globalStatus, setGlobalStatus] = useState<GlobalStatus | null>(null);
+  const riskCodeSet = new Set(globalStatus?.risk_codes ?? []);
 
-  async function loadPool(poolCode: string) {
+  function isRiskStock(dm: string): boolean {
+    if (!dm) return false;
+    return riskCodeSet.has(dm) || [...riskCodeSet].some(rc => rc.startsWith(dm));
+  }
+
+  async function loadPool(poolCode: string, d: string) {
+    if (!d) return;
     setLoading(true);
     try {
-      const res = await poolApi.get(poolCode, date);
+      const res = await poolApi.get(poolCode, d);
       setData(res.data);
     } catch (e) {
       console.error("加载股池失败", e);
@@ -56,7 +64,14 @@ export default function PoolsPage() {
   }
 
   useEffect(() => {
-    loadPool(activeTab);
+    poolApi.globalStatus().then(gs => {
+      setGlobalStatus(gs);
+      setDate(gs.date);
+    }).catch(() => setDate(today()));
+  }, []);
+
+  useEffect(() => {
+    loadPool(activeTab, date);
   }, [activeTab, date]);
 
   return (
@@ -64,7 +79,15 @@ export default function PoolsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">股池监控</h1>
-          <p className="text-muted-foreground">实时跟踪涨停、跌停、强势、炸板、次新股池</p>
+          <p className="text-muted-foreground">
+            实时跟踪涨停、跌停、强势、炸板、次新股池
+            {globalStatus && !globalStatus.is_trading_day && (
+              <span className="ml-2 text-slate-500">
+                ({globalStatus.holiday_name || "非交易日"}
+                {globalStatus.next_open_date && ` | ${globalStatus.next_open_date} 开盘`})
+              </span>
+            )}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <input
@@ -73,7 +96,7 @@ export default function PoolsPage() {
             onChange={(e) => setDate(e.target.value)}
             className="rounded-md border bg-background px-3 py-1.5 text-sm"
           />
-          <Button variant="outline" size="sm" onClick={() => loadPool(activeTab)}>
+          <Button variant="outline" size="sm" onClick={() => loadPool(activeTab, date)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             刷新
           </Button>
@@ -154,8 +177,13 @@ export default function PoolsPage() {
                       <TableBody>
                         {data.map((s) => (
                           <TableRow key={s.dm}>
-                            <TableCell className="font-mono text-xs">{s.dm}</TableCell>
-                            <TableCell className="font-medium">{s.mc}</TableCell>
+                            <TableCell className={`font-mono text-xs ${isRiskStock(s.dm) ? "text-red-400" : ""}`}>
+                              {s.dm}
+                              {isRiskStock(s.dm) && (
+                                <Badge variant="destructive" className="ml-1 px-1 py-0 text-[10px]">风险</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className={`font-medium ${isRiskStock(s.dm) ? "text-red-400" : ""}`}>{s.mc}</TableCell>
                             <TableCell className="text-right">{s.p?.toFixed(2) ?? "-"}</TableCell>
                             <TableCell
                               className={`text-right font-medium ${

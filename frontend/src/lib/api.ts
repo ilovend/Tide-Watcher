@@ -87,6 +87,8 @@ export const poolApi = {
     request<TimingSignal>(`/api/pools/timing/${date}`),
   timingCalendar: () =>
     request<SettlementCalendar>("/api/pools/timing/calendar"),
+  globalStatus: () =>
+    request<GlobalStatus>("/api/pools/global-status"),
 };
 
 // ---------- 策略 ----------
@@ -307,6 +309,20 @@ export interface SettlementCalendar {
   days_to_options: number;
   is_futures_week: boolean;
   is_options_week: boolean;
+}
+
+export interface GlobalStatus {
+  date: string;
+  is_trading_day: boolean;
+  is_holiday: boolean;
+  holiday_name: string;
+  next_open_date: string;
+  timing_light: string;
+  timing_action: string;
+  timing_reason: string;
+  risk_stock_total: number;
+  risk_stock_extreme: number;
+  risk_codes: string[];
 }
 
 export interface WatchlistItem {

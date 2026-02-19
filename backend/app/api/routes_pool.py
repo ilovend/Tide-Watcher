@@ -269,6 +269,36 @@ async def trigger_risk_scan(source: ZhituSource = Depends(get_source)):
     return stats
 
 
+# ==================== 全局状态 ====================
+
+@router.get("/global-status")
+async def get_global_status():
+    """全局市场状态：当前日期、假期信息、风险股统计，供前端全页面同步。"""
+    import datetime
+    from app.engine.timing import evaluate
+    from app.engine.calendar import is_trading_day, next_trading_day
+    from app.engine.finance_risk import get_risk_list
+
+    today = datetime.date.today()
+    signal = evaluate(today)
+    risk_stocks = await get_risk_list()
+    extreme_count = sum(1 for r in risk_stocks if r.is_extreme_risk)
+
+    return {
+        "date": str(today),
+        "is_trading_day": is_trading_day(today),
+        "is_holiday": signal.is_holiday,
+        "holiday_name": signal.holiday_name,
+        "next_open_date": signal.next_open_date,
+        "timing_light": signal.light.value,
+        "timing_action": signal.action.value,
+        "timing_reason": signal.reason,
+        "risk_stock_total": len(risk_stocks),
+        "risk_stock_extreme": extreme_count,
+        "risk_codes": [r.code for r in risk_stocks],
+    }
+
+
 # ==================== 择时信号 ====================
 
 @router.get("/timing/today")
