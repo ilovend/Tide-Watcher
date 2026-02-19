@@ -49,7 +49,7 @@ export default function StocksPage() {
         poolApi.riskCheck(code.trim()).catch(() => null),
       ]);
       setQuote(quoteRes.data);
-      setKline(klineRes.data);
+      setKline(Array.isArray(klineRes.data) ? klineRes.data : []);
       if (companyRes.data) setCompanyInfo(companyRes.data);
       setSectors(sectorsRes.data || []);
       if (riskRes && riskRes.has_risk) {

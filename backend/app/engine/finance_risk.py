@@ -311,8 +311,11 @@ async def get_risk_by_code(code: str) -> FinancialRisk | None:
     """查询单只股票的财务风险标记（从缓存数据库读取）。"""
     code = normalize_code(code)
     async with async_session() as session:
+        # 精确匹配优先，兼容数据库中 000004.SZ.BJ 格式的历史数据
         result = await session.execute(
-            select(FinancialRisk).where(FinancialRisk.code == code).limit(1)
+            select(FinancialRisk).where(
+                FinancialRisk.code.startswith(code)
+            ).limit(1)
         )
         return result.scalar_one_or_none()
 
