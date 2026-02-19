@@ -406,7 +406,34 @@ async def get_pool(
     save: bool = Query(False, description="是否同时保存到结构化表"),
     source: ZhituSource = Depends(get_source),
 ):
-    """获取指定日期的股池数据（实时从 ZhituAPI 获取）。"""
+    """获取指定日期的股池数据（实时从 ZhituAPI 获取）。
+    非交易日直接返回空数据，避免 ZhituAPI 静默回传最近交易日的陈旧数据。
+    """
+    import datetime
+    from app.engine.calendar import is_trading_day
+
+    try:
+        d = datetime.date.fromisoformat(date)
+    except ValueError:
+        return {
+            "pool_type": pool_type,
+            "pool_name": _POOL_NAMES.get(pool_type, pool_type),
+            "date": date,
+            "count": 0,
+            "data": [],
+            "message": f"日期格式错误: {date}",
+        }
+
+    if not is_trading_day(d):
+        return {
+            "pool_type": pool_type,
+            "pool_name": _POOL_NAMES.get(pool_type, pool_type),
+            "date": date,
+            "count": 0,
+            "data": [],
+            "message": "非交易日，无股池数据",
+        }
+
     data = await source.get_pool(pool_type, date)
 
     if save and data:
