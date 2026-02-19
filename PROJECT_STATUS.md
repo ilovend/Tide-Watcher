@@ -1,7 +1,7 @@
 # 观潮 (Tide-Watcher) 项目状态文档
 
 > 最后更新：2026-02-20  
-> 版本：v0.3
+> 版本：v0.3.1
 
 ---
 
@@ -164,10 +164,10 @@ Step 2: 深度扫描（/hs/fin/income 利润表）
 
 | 页面 | 文件 | 功能 |
 |------|------|------|
-| **观潮看板** | `src/app/page.tsx` | 三级择时红绿灯 HUD（红/黄/绿渐变）+ 结算日倒计时 + 盘面守卫状态 + 策略信号 + 涨停TOP10 |
-| **股池监控** | `src/app/pools/page.tsx` | 5种股池Tab（涨停/跌停/强势/炸板/次新）+ 日期选择 |
+| **观潮看板** | `src/app/page.tsx` | 四色择时 HUD（红/黄/绿/灰休市）+ 结算日倒计时 + 盘面守卫 + 策略信号 + 涨停TOP10 |
+| **股池监控** | `src/app/pools/page.tsx` | 5种股池Tab + 服务端日期同步 + 风险股标红[风险]标签 + 休市提示 |
 | **策略中心** | `src/app/strategies/page.tsx` | 策略列表 + 一键执行 + 信号历史表 |
-| **个股查询** | `src/app/stocks/page.tsx` | 实时行情 + K线图(Lightweight Charts) + 财务排雷深度面板(风险指标明细) + Toast预警 |
+| **个股查询** | `src/app/stocks/page.tsx` | 实时行情 + K线图 + 财务排雷深度面板(border-l-4红色渐变) + 严禁买入Toast |
 | **市场情绪** | `src/app/emotion/page.tsx` | 5阶段指标卡 + 情绪走势表 |
 
 ### 综合操作建议矩阵
@@ -246,9 +246,11 @@ lucide-react, sonner, radix-ui, class-variance-authority
 
 ## 八、待办事项
 
-- [ ] 编写选股策略（`strategies/` 目录）
-- [ ] 连续亏损规则可进一步用 `/hs/fin/income` 深度扫描全市场（目前仅对已标记股扫描）
-- [ ] 交易日盘中实测择时+守卫完整流程
+- [ ] 编写选股策略（`strategies/` 目录，已有涨停板连板+放量突破两个模板）
+- [ ] 连续亏损规则可进一步用 `/hs/fin/income` 深度扫描全市场
+- [ ] 交易日盘中实测择时+守卫完整流程（春节后 2/24 首次实盘测试）
 - [ ] 清理 `scripts/` 目录中的临时调试脚本
-- [ ] 前端情绪页面增加 Plotly/Recharts 评分走势图
-- [ ] 个股查询页面增加择时+排雷综合操作建议矩阵
+- [ ] 前端情绪页面增加 Recharts 评分走势图
+- [ ] 个股查询页增加择时+排雷综合操作建议矩阵
+- [ ] 修复 financial_risk 表中代码格式（当前为 xxx.SZ.BJ，应该为 xxx.SZ）
+- [ ] 股池列表“风险”标签在实盘中验证（需确认 risk_codes 与股池 dm 字段的匹配逻辑）

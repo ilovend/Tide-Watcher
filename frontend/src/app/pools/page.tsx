@@ -54,9 +54,8 @@ export default function PoolsPage() {
     setLoading(true);
     try {
       const res = await poolApi.get(poolCode, d);
-      setData(res.data);
-    } catch (e) {
-      console.error("加载股池失败", e);
+      setData(Array.isArray(res.data) ? res.data : []);
+    } catch {
       setData([]);
     } finally {
       setLoading(false);
