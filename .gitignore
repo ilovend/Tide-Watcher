@@ -32,3 +32,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Strategies (private trading logic — only template is public)
+backend/app/strategies/*.py
+!backend/app/strategies/__init__.py
+!backend/app/strategies/_template.py
